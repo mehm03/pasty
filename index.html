@@ -152,6 +152,17 @@ mark{background:rgba(111,214,255,.24);color:#c9f1ff;border-radius:3px;padding:0 
 .fine{font-size:12.5px;color:var(--dim);margin:12px 4px 0;line-height:1.45}
 
 /* preview + media */
+a.pv{display:block;color:inherit;text-decoration:none}
+a.pv:active{opacity:.75}
+.pvgo{margin-left:auto;flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(111,214,255,.12);color:var(--accent)}
+.pvgo svg{width:16px;height:16px}
+.fopen{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(111,214,255,.12);color:var(--accent)}
+.fopen svg{width:16px;height:16px}
+.side{align-self:stretch;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:6px}
+.side .when{margin-top:4px;align-self:auto}
+.rowopen{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(111,214,255,.10);border:1px solid rgba(111,214,255,.16);color:var(--accent)}
+.rowopen:active{background:rgba(111,214,255,.25)}
+.rowopen svg{width:16px;height:16px}
 .pv{border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--line);margin-bottom:14px}
 .pvimg{aspect-ratio:1.91/1;background:#0b0b0d;overflow:hidden}
 .pvimg img{width:100%;height:100%;object-fit:cover;display:block}
@@ -375,7 +386,7 @@ function rowHTML(i,terms){const p=i.preview||{};const tu=thumbURL(i);let th;
   const tags=fs.slice(0,3).map(f=>`<span class="chip" data-act="goto-folder" data-id="${f.id}">${esc(f.name)}</span>`).join('')+(fs.length>3?`<span class="chip more">+${fs.length-3}</span>`:'');
   return `<div class="row" data-act="open-item" data-id="${i.id}"><div class="thumb">${th}${badge}</div>
     <div class="meta"><div class="t">${hl(dTitle(i),terms)}</div><div class="s">${hl(sub,terms)}${desc?' — '+hl(desc,terms):''}</div>${tags?`<div class="tags">${tags}</div>`:''}</div>
-    <div class="when">${ago(i.createdAt)}</div></div>`}
+    <div class="side"><div class="when">${ago(i.createdAt)}</div>${i.type==='link'&&isUrl(i.url)?`<a class="rowopen" href="${esc(i.url)}" target="_blank" rel="noopener" aria-label="Open link">${I(P.open)}</a>`:''}</div></div>`}
 const listHTML=(items,terms)=>`<div class="list">${items.map(i=>rowHTML(i,terms)).join('')}</div>`;
 function folderCard(f,showPath){const subs=childrenOf(f.id).length,n=itemsIn(f.id).length;
   const meta=showPath&&f.parentId?pathOf(f.parentId).join(' / '):[subs?`${subs} folder${subs>1?'s':''}`:'',`${n} item${n!==1?'s':''}`].filter(Boolean).join(' · ');
@@ -522,7 +533,7 @@ function openEditor(d,opts){opts=opts||{};const isNew=!!opts.isNew,Q=opts.queue;
    <div class="sheet-body">
     <div class="ed-media"></div><div class="dup" hidden></div>
     <div class="group">
-     ${d.type==='link'?`<label class="field"><span>Link</span><input class="ed-url" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://"></label>`
+     ${d.type==='link'?`<label class="field"><span>Link</span><input class="ed-url" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://"><a class="fopen" target="_blank" rel="noopener" aria-label="Open link" hidden>${I(P.open)}</a></label>`
        :`<div class="field"><span>File</span><div class="static">${esc(d.fileName||'Untitled')}<em>${esc(info)}</em></div></div>`}
      <label class="field"><span>Title</span><input class="ed-title" autocapitalize="sentences" maxlength="200"></label>
      <label class="field col"><span>Description</span><textarea class="ed-desc" rows="3" placeholder="Notes, keywords — anything you’ll want to search for later"></textarea></label>
@@ -547,9 +558,10 @@ function openEditor(d,opts){opts=opts||{};const isNew=!!opts.isNew,Q=opts.queue;
     if(d.type==='link'){const p=d.preview;if(!p){media.innerHTML='';return}
       if(p.loading){media.innerHTML=`<div class="pv"><div class="pvimg shimmer"></div><div class="pvinfo"><div style="flex:1"><div class="line shimmer" style="width:35%"></div><div class="line shimmer" style="width:80%"></div></div></div></div>`;return}
       const src=d.thumb?sheetURL(w,d.thumb):p.image;
-      media.innerHTML=`<div class="pv">${src?`<div class="pvimg"><img src="${esc(src)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></div>`:''}
+      const href=normUrl(urlI?urlI.value:d.url);const tag=isUrl(href)?'a':'div';
+      media.innerHTML=`<${tag} class="pv"${tag==='a'?` href="${esc(href)}" target="_blank" rel="noopener"`:''}>${src?`<div class="pvimg"><img src="${esc(src)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></div>`:''}
         <div class="pvinfo">${p.logo?`<img class="logo" src="${esc(p.logo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:`<span class="logo ph">${I(P.link)}</span>`}
-        <div class="pvtext"><div class="site">${esc(p.site||host(d.url))}</div>${p.title?`<div class="pvt">${esc(p.title)}</div>`:''}</div></div></div>`;return}
+        <div class="pvtext"><div class="site">${esc(p.site||host(d.url))}</div>${p.title?`<div class="pvt">${esc(p.title)}</div>`:''}</div>${tag==='a'?`<span class="pvgo">${I(P.open)}</span>`:''}</div></${tag}>`;return}
     if(!mediaURL&&blob)mediaURL=sheetURL(w,blob);
     if(d.type==='image')media.innerHTML=mediaURL?`<div class="mview"><img src="${mediaURL}" alt=""></div>`:'';
     else if(d.type==='video')media.innerHTML=mediaURL?`<div class="mview"><video src="${mediaURL}" controls playsinline preload="metadata"${d.thumb?` poster="${sheetURL(w,d.thumb)}"`:''}></video></div>`:'';
@@ -569,7 +581,9 @@ function openEditor(d,opts){opts=opts||{};const isNew=!!opts.isNew,Q=opts.queue;
   function checkDup(u){const box=w.querySelector('.dup');const ex=isUrl(u)&&[...S.items.values()].find(i=>i.type==='link'&&i.id!==d.id&&i.url===u);
     if(!ex){box.hidden=true;return}const fs=ex.folderIds.map(id=>S.folders.get(id)).filter(Boolean).map(f=>f.name);
     box.innerHTML=`<span>Already saved${fs.length?` in ${esc(fs.join(', '))}`:''}</span><button data-x="viewdup" data-id="${ex.id}">View</button>`;box.hidden=false}
-  if(urlI){let deb;urlI.addEventListener('input',()=>{clearTimeout(deb);deb=setTimeout(()=>loadPreview(),700)});urlI.addEventListener('blur',()=>loadPreview());
+  const fopen=w.querySelector('.fopen');
+  const syncOpen=()=>{if(!fopen)return;const u=normUrl(urlI.value);fopen.hidden=!isUrl(u);if(isUrl(u))fopen.href=u};
+  if(urlI){syncOpen();urlI.addEventListener('input',syncOpen);let deb;urlI.addEventListener('input',()=>{clearTimeout(deb);deb=setTimeout(()=>loadPreview(),700)});urlI.addEventListener('blur',()=>loadPreview());
     if(isNew&&isUrl(normUrl(d.url))){urlI.value=normUrl(d.url);loadPreview()}else if(!isNew)checkDup(d.url);
     if(isNew&&!d.url)urlI.focus({preventScroll:true})}
   dI.addEventListener('input',()=>autosize(dI));
@@ -690,7 +704,7 @@ async function openSettings(){let used='—';try{const e=await navigator.storage
     else if(k==='savefile'){const f=w._file;if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else downloadFile(f)}})}
 
 /* ============ global taps ============ */
-document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.closest('.sheet-wrap'))return;const a=el.dataset.act;
+document.addEventListener('click',e=>{if(e.target.closest('a[href]'))return;const el=e.target.closest('[data-act]');if(!el||el.closest('.sheet-wrap'))return;const a=el.dataset.act;
   if(a==='paste')doPaste();
   else if(a==='upload')$('#file-input').click();
   else if(a==='new-folder')openFolderSheet(null,route().v==='folder'?route().id:'');

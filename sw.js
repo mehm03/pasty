@@ -1,5 +1,5 @@
 // pasty offline cache — bump VERSION when you upload new files
-const VERSION = 'pasty-v1';
+const VERSION = 'pasty-v2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
